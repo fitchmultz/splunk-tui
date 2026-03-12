@@ -16,6 +16,7 @@ use crate::app::export::ExportTarget;
 use crate::app::input::helpers::{
     handle_copy_with_toast, handle_list_export, is_copy_key, is_export_key, should_export_list,
 };
+use splunk_client::models::LookupTable;
 
 impl App {
     /// Handle keyboard input for the lookups screen.
@@ -28,12 +29,7 @@ impl App {
     /// * `None` - No action to execute
     pub fn handle_lookups_input(&mut self, key: KeyEvent) -> Option<Action> {
         if is_copy_key(key) {
-            let content = self.lookups.as_ref().and_then(|lookups| {
-                self.lookups_state
-                    .selected()
-                    .and_then(|index| lookups.get(index))
-                    .map(|lookup| lookup.name.clone())
-            });
+            let content = self.selected_lookup().map(|lookup| lookup.name.clone());
 
             return handle_copy_with_toast(self, content);
         }
@@ -81,59 +77,17 @@ impl App {
             }
 
             // Download selected lookup (Ctrl+D or 'd')
-            KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                if let Some(index) = self.lookups_state.selected()
-                    && let Some(lookups) = &self.lookups
-                    && let Some(lookup) = lookups.get(index)
-                {
-                    let output_path = std::path::PathBuf::from(format!("{}.csv", lookup.name));
-                    return Some(Action::DownloadLookup {
-                        name: lookup.name.clone(),
-                        app: None,
-                        owner: None,
-                        output_path,
-                    });
-                }
-                None
-            }
-            KeyCode::Char('d') if key.modifiers.is_empty() => {
-                if let Some(index) = self.lookups_state.selected()
-                    && let Some(lookups) = &self.lookups
-                    && let Some(lookup) = lookups.get(index)
-                {
-                    let output_path = std::path::PathBuf::from(format!("{}.csv", lookup.name));
-                    return Some(Action::DownloadLookup {
-                        name: lookup.name.clone(),
-                        app: None,
-                        owner: None,
-                        output_path,
-                    });
-                }
-                None
+            KeyCode::Char('d')
+                if key.modifiers.is_empty() || key.modifiers.contains(KeyModifiers::CONTROL) =>
+            {
+                self.selected_lookup_download_action()
             }
 
             // Delete selected lookup (Ctrl+X or 'x')
-            KeyCode::Char('x') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                if let Some(index) = self.lookups_state.selected()
-                    && let Some(lookups) = &self.lookups
-                    && let Some(lookup) = lookups.get(index)
-                {
-                    return Some(Action::OpenDeleteLookupConfirm {
-                        name: lookup.name.clone(),
-                    });
-                }
-                None
-            }
-            KeyCode::Char('x') if key.modifiers.is_empty() => {
-                if let Some(index) = self.lookups_state.selected()
-                    && let Some(lookups) = &self.lookups
-                    && let Some(lookup) = lookups.get(index)
-                {
-                    return Some(Action::OpenDeleteLookupConfirm {
-                        name: lookup.name.clone(),
-                    });
-                }
-                None
+            KeyCode::Char('x')
+                if key.modifiers.is_empty() || key.modifiers.contains(KeyModifiers::CONTROL) =>
+            {
+                self.selected_lookup_delete_action()
             }
 
             // Load more (if available)
@@ -143,6 +97,30 @@ impl App {
 
             _ => None,
         }
+    }
+
+    fn selected_lookup(&self) -> Option<&LookupTable> {
+        self.lookups.as_ref().and_then(|lookups| {
+            self.lookups_state
+                .selected()
+                .and_then(|index| lookups.get(index))
+        })
+    }
+
+    fn selected_lookup_download_action(&self) -> Option<Action> {
+        self.selected_lookup().map(|lookup| Action::DownloadLookup {
+            name: lookup.name.clone(),
+            app: None,
+            owner: None,
+            output_path: std::path::PathBuf::from(format!("{}.csv", lookup.name)),
+        })
+    }
+
+    fn selected_lookup_delete_action(&self) -> Option<Action> {
+        self.selected_lookup()
+            .map(|lookup| Action::OpenDeleteLookupConfirm {
+                name: lookup.name.clone(),
+            })
     }
 }
 
@@ -156,28 +134,23 @@ mod tests {
         KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL)
     }
 
+    fn lookup(name: &str, size: usize) -> LookupTable {
+        LookupTable {
+            name: name.to_string(),
+            filename: format!("{name}.csv"),
+            owner: "admin".to_string(),
+            app: "search".to_string(),
+            sharing: "app".to_string(),
+            size,
+        }
+    }
+
     #[test]
+    #[allow(clippy::field_reassign_with_default)]
     fn test_lookups_navigation_down() {
         let mut app = App::default();
         app.current_screen = CurrentScreen::Lookups;
-        app.lookups = Some(vec![
-            LookupTable {
-                name: "lookup1".to_string(),
-                filename: "lookup1.csv".to_string(),
-                owner: "admin".to_string(),
-                app: "search".to_string(),
-                sharing: "app".to_string(),
-                size: 1024,
-            },
-            LookupTable {
-                name: "lookup2".to_string(),
-                filename: "lookup2.csv".to_string(),
-                owner: "admin".to_string(),
-                app: "search".to_string(),
-                sharing: "app".to_string(),
-                size: 2048,
-            },
-        ]);
+        app.lookups = Some(vec![lookup("lookup1", 1024), lookup("lookup2", 2048)]);
         app.lookups_state.select(Some(0));
 
         // Press 'j' to go down
@@ -188,27 +161,11 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::field_reassign_with_default)]
     fn test_lookups_navigation_up() {
         let mut app = App::default();
         app.current_screen = CurrentScreen::Lookups;
-        app.lookups = Some(vec![
-            LookupTable {
-                name: "lookup1".to_string(),
-                filename: "lookup1.csv".to_string(),
-                owner: "admin".to_string(),
-                app: "search".to_string(),
-                sharing: "app".to_string(),
-                size: 1024,
-            },
-            LookupTable {
-                name: "lookup2".to_string(),
-                filename: "lookup2.csv".to_string(),
-                owner: "admin".to_string(),
-                app: "search".to_string(),
-                sharing: "app".to_string(),
-                size: 2048,
-            },
-        ]);
+        app.lookups = Some(vec![lookup("lookup1", 1024), lookup("lookup2", 2048)]);
         app.lookups_state.select(Some(1));
 
         // Press 'k' to go up
@@ -243,14 +200,7 @@ mod tests {
     fn test_lookups_export() {
         let mut app = App::default();
         app.current_screen = CurrentScreen::Lookups;
-        app.lookups = Some(vec![LookupTable {
-            name: "lookup1".to_string(),
-            filename: "lookup1.csv".to_string(),
-            owner: "admin".to_string(),
-            app: "search".to_string(),
-            sharing: "app".to_string(),
-            size: 1024,
-        }]);
+        app.lookups = Some(vec![lookup("lookup1", 1024)]);
 
         // Press Ctrl+e to export
         let key = ctrl_key('e');
@@ -279,14 +229,7 @@ mod tests {
     fn test_lookups_copy() {
         let mut app = App::default();
         app.current_screen = CurrentScreen::Lookups;
-        app.lookups = Some(vec![LookupTable {
-            name: "lookup1".to_string(),
-            filename: "lookup1.csv".to_string(),
-            owner: "admin".to_string(),
-            app: "search".to_string(),
-            sharing: "app".to_string(),
-            size: 1024,
-        }]);
+        app.lookups = Some(vec![lookup("lookup1", 1024)]);
         app.lookups_state.select(Some(0));
 
         // Press Ctrl+c to copy
@@ -299,5 +242,55 @@ mod tests {
         );
     }
 
-    use splunk_client::models::LookupTable;
+    #[test]
+    #[allow(clippy::field_reassign_with_default)]
+    fn test_lookups_download_shortcuts_share_behavior() {
+        let mut app = App::default();
+        app.current_screen = CurrentScreen::Lookups;
+        app.lookups = Some(vec![lookup("lookup1", 1024)]);
+        app.lookups_state.select(Some(0));
+
+        let plain = app.handle_lookups_input(KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE));
+        let ctrl = app.handle_lookups_input(ctrl_key('d'));
+
+        assert!(matches!(
+            plain,
+            Some(Action::DownloadLookup {
+                ref name,
+                app: None,
+                owner: None,
+                ref output_path,
+            }) if name == "lookup1" && output_path == &std::path::PathBuf::from("lookup1.csv")
+        ));
+        assert!(matches!(
+            ctrl,
+            Some(Action::DownloadLookup {
+                ref name,
+                app: None,
+                owner: None,
+                ref output_path,
+            }) if name == "lookup1" && output_path == &std::path::PathBuf::from("lookup1.csv")
+        ));
+    }
+
+    #[test]
+    #[allow(clippy::field_reassign_with_default)]
+    fn test_lookups_delete_shortcuts_share_behavior() {
+        let mut app = App::default();
+        app.current_screen = CurrentScreen::Lookups;
+        app.lookups = Some(vec![lookup("lookup1", 1024)]);
+        app.lookups_state.select(Some(0));
+
+        let plain = app.handle_lookups_input(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE));
+        let ctrl = app.handle_lookups_input(ctrl_key('x'));
+
+        assert!(matches!(
+            plain,
+            Some(Action::OpenDeleteLookupConfirm { ref name }) if name == "lookup1"
+        ));
+        assert!(matches!(
+            ctrl,
+            Some(Action::OpenDeleteLookupConfirm { ref name }) if name == "lookup1"
+        ));
+    }
 }
