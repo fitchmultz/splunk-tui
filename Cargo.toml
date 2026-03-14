@@ -6,7 +6,7 @@ members = ["crates/cli", "crates/tui", "crates/client", "crates/config", "crates
 version = "0.1.0"
 edition = "2024"
 authors = ["Splunk TUI Contributors"]
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/fitchmultz/splunk-tui"
 
 [workspace.dependencies]
